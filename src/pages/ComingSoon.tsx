@@ -18,7 +18,11 @@ const ComingSoon = () => {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [waitlistCount, setWaitlistCount] = useState<number>(0);
+  const [waitlistCount, setWaitlistCount] = useState<number>(() => {
+    // Load from localStorage on initial render
+    const saved = localStorage.getItem('waitlistCount');
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
@@ -39,7 +43,11 @@ const ComingSoon = () => {
         .select('*', { count: 'exact', head: true });
 
       if (!error && typeof count === 'number') {
-        setWaitlistCount(count);
+        // Only update if we got a valid count from the database
+        // This preserves localStorage count if database is empty
+        if (count > 0) {
+          setWaitlistCount(count);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch waitlist count', err);
@@ -47,7 +55,7 @@ const ComingSoon = () => {
   };
 
   useEffect(() => {
-    // If Supabase is configured, try to get an accurate count from the DB
+    // Fetch the actual count from the database on page load
     fetchWaitlistCount();
 
     const calculateTimeLeft = () => {
@@ -68,6 +76,11 @@ const ComingSoon = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Save count to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('waitlistCount', waitlistCount.toString());
+  }, [waitlistCount]);
 
   const handleNotify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,13 +126,8 @@ const ComingSoon = () => {
           description: "We'll notify you when we launch.",
         });
 
-        // Try to re-fetch the authoritative count from the server.
-        try {
-          await fetchWaitlistCount();
-        } catch {
-          // If the fetch fails for any reason, fall back to a local increment
-          setWaitlistCount((c) => c + 1);
-        }
+        // Increment count locally
+        setWaitlistCount((c) => c + 1);
       }
       
       setEmail("");
