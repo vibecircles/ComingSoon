@@ -18,7 +18,7 @@ const ComingSoon = () => {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [waitlistCount, setWaitlistCount] = useState<number>(2847);
+  const [waitlistCount, setWaitlistCount] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
