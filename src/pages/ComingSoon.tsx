@@ -26,9 +26,8 @@ const ComingSoon = () => {
     seconds: 0,
   });
 
-  // Set launch date to 1080 days from now
-  const launchDate = new Date();
-  launchDate.setDate(launchDate.getDate() + 1080);
+  // Fixed launch date (January 11, 2029 - approximately 1080 days from January 26, 2026)
+  const launchDate = new Date('2029-01-11T00:00:00');
 
   // Reusable fetcher for the waitlist count
   const fetchWaitlistCount = async () => {
