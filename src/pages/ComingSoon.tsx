@@ -1,10 +1,5 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Bell, Sparkles } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import Footer from "@/components/Footer";
 
 interface TimeLeft {
@@ -15,14 +10,6 @@ interface TimeLeft {
 }
 
 const ComingSoon = () => {
-  const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [waitlistCount, setWaitlistCount] = useState<number>(() => {
-    // Load from localStorage on initial render
-    const saved = localStorage.getItem('waitlistCount');
-    return saved ? parseInt(saved, 10) : 0;
-  });
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
@@ -33,31 +20,7 @@ const ComingSoon = () => {
   // Fixed launch date (January 11, 2029 - approximately 1080 days from January 26, 2026)
   const launchDate = new Date('2029-01-11T00:00:00');
 
-  // Reusable fetcher for the waitlist count
-  const fetchWaitlistCount = async () => {
-    if (!isSupabaseConfigured) return;
-
-    try {
-      const { count, error } = await supabase
-        .from('waitlist')
-        .select('*', { count: 'exact', head: true });
-
-      if (!error && typeof count === 'number') {
-        // Only update if we got a valid count from the database
-        // This preserves localStorage count if database is empty
-        if (count > 0) {
-          setWaitlistCount(count);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch waitlist count', err);
-    }
-  };
-
   useEffect(() => {
-    // Fetch the actual count from the database on page load
-    fetchWaitlistCount();
-
     const calculateTimeLeft = () => {
       const difference = launchDate.getTime() - new Date().getTime();
 
@@ -77,72 +40,6 @@ const ComingSoon = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Save count to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('waitlistCount', waitlistCount.toString());
-  }, [waitlistCount]);
-
-  const handleNotify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-
-    setIsSubmitting(true);
-
-    try {
-      // Check if Supabase is configured
-      if (!isSupabaseConfigured) {
-        toast({
-          title: "You're on the list! 🎉",
-          description: "We'll notify you when we launch.",
-        });
-        setEmail("");
-        setWaitlistCount((c) => c + 1);
-        setIsSubmitting(false);
-        return;
-      }
-
-      const { error } = await supabase
-        .from('waitlist')
-        .insert([
-          { 
-            email: email.toLowerCase().trim(),
-            created_at: new Date().toISOString()
-          }
-        ]);
-
-      if (error) {
-        // Handle duplicate email error gracefully
-        if (error.code === '23505') {
-          toast({
-            title: "Already subscribed! 🎉",
-            description: "You're already on our waitlist.",
-          });
-        } else {
-          throw error;
-        }
-      } else {
-        toast({
-          title: "You're on the list! 🎉",
-          description: "We'll notify you when we launch.",
-        });
-
-        // Increment count locally
-        setWaitlistCount((c) => c + 1);
-      }
-      
-      setEmail("");
-    } catch (error) {
-      console.error('Error saving email:', error);
-      toast({
-        title: "Oops! Something went wrong",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const timeBlocks = [
     { label: "Days", value: timeLeft.days },
     { label: "Hours", value: timeLeft.hours },
@@ -158,15 +55,6 @@ const ComingSoon = () => {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse delay-1000" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-primary/10 to-accent/10 rounded-full blur-3xl" />
       </div>
-
-      {/* Grid pattern overlay */}
-      <div 
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground)) 1px, transparent 0)`,
-          backgroundSize: '40px 40px'
-        }}
-      />
 
       <div className="relative z-10 container mx-auto px-4 text-center flex-1 flex items-center justify-center">
         <motion.div
@@ -216,7 +104,7 @@ const ComingSoon = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
-            className="flex justify-center gap-3 md:gap-6 mb-12"
+            className="flex justify-center gap-3 md:gap-6"
           >
             {timeBlocks.map((block, index) => (
               <motion.div
@@ -243,38 +131,6 @@ const ComingSoon = () => {
               </motion.div>
             ))}
           </motion.div>
-
-          {/* Email Signup */}
-          <motion.form
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-            onSubmit={handleNotify}
-            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-          >
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 h-12 bg-card/50 border-border/50 backdrop-blur-sm text-foreground placeholder:text-muted-foreground"
-              required
-            />
-            <Button type="submit" variant="hero" size="lg" className="h-12 px-6" disabled={isSubmitting}>
-              <Bell className="w-4 h-4 mr-2" />
-              {isSubmitting ? "Adding..." : "Notify Me"}
-            </Button>
-          </motion.form>
-
-          {/* Social proof */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.1 }}
-            className="text-sm text-muted-foreground mt-6"
-          >
-            Join <span className="text-primary font-semibold">{waitlistCount.toLocaleString()}</span> others waiting for launch
-          </motion.p>
         </motion.div>
       </div>
       <div className="relative z-10">
