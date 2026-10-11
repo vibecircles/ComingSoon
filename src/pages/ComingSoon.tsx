@@ -49,6 +49,17 @@ const ComingSoon = () => {
 
   const socialLinks = [
     {
+      name: "Company Website",
+      href: "https://www.vibecircles.co.za",
+      icon: (props: React.SVGProps<SVGSVGElement>) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+          <path d="M2 12h20" />
+        </svg>
+      ),
+    },
+    {
       name: "X (Twitter)",
       href: "https://x.com/VibeCircles",
       icon: (props: React.SVGProps<SVGSVGElement>) => (
@@ -120,9 +131,14 @@ const ComingSoon = () => {
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="inline-flex items-center gap-2 mb-8"
           >
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <a
+              href="https://www.vibecircles.co.za"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hover:opacity-80 transition-opacity"
+            >
               VibeCircle
-            </span>
+            </a>
           </motion.div>
 
           {/* Heading */}
